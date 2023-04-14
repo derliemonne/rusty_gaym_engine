@@ -1,0 +1,5 @@
+# rust
+/target
+
+# exclude doc files
+doc
