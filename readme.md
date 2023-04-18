@@ -1,4 +1,5 @@
 # Rusty Gaym Engine
+[📖 Documentation](https://derliemonne.github.io/rusty_gaym_engine/)
 
 ## What is it?
 My university game engine project written in rust that has:
