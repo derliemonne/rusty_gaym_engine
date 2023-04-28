@@ -1,6 +1,9 @@
 pub mod matrix;
 pub mod vector;
-mod game;
+pub mod engine;
+pub mod geometry;
+pub mod components;
+pub mod ecs;
 use matrix::*;
 use vector::*;
 

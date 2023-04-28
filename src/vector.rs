@@ -12,11 +12,11 @@ impl Vector {
         Vector { coordinates }
     }
 
-    pub fn zero() -> Vector {
+    pub fn zero3() -> Vector {
         Vector::from_xyz(0.0, 0.0, 0.0)
     }
 
-    pub fn one() -> Vector {
+    pub fn one3() -> Vector {
         Vector::from_xyz(1.0, 1.0, 1.0)
     }
 
@@ -28,7 +28,7 @@ impl Vector {
     /// Returns rotated 2d vector.
     /// If provided vector is not 2d, returns `None`.
     pub fn rotate2d(&self, radians: f32) -> Option<Vector> {
-        if self.size() != 2 {
+        if self.dim() != 2 {
             return None;
         }
         Some(Matrix::rotation_matrix2d(radians)
@@ -40,7 +40,7 @@ impl Vector {
     /// Returns rotated 3d vector.
     /// If provided vector is not 3d, returns `None`.
     pub fn rotate3d(&self, x_radians: f32, y_radians: f32, z_radians: f32) -> Option<Vector> {
-        if self.size() != 3 {
+        if self.dim() != 3 {
             return None;
         }
         Some(Matrix::rotation_matrix3d(x_radians, y_radians, z_radians)
@@ -49,7 +49,7 @@ impl Vector {
     }
 
     /// Returns number of components in vector.
-    pub fn size(&self) -> usize {
+    pub fn dim(&self) -> usize {
         self.coordinates.len()
     }
 
@@ -79,14 +79,14 @@ impl Vector {
 
     /// Returns the square of Euclidean magnitude of vector.
     pub fn square_magnitude(&self) -> f32 {
-        self.square_distance(&Vector::zero())
+        self.square_distance(&Vector::zero3())
     }
 
     /// Returns Euclidean magnitude of vector.
     /// This method first calculates the square magnitude, and then takes the square root of result.
     /// If you want to get square magnitude use `square_magnitude` method instead.
     pub fn magnitude(&self) -> f32 {
-        self.distance(&Vector::zero())
+        self.distance(&Vector::zero3())
     }
 
     /// Computes the dot product of this vector with another vector.
@@ -111,7 +111,7 @@ impl Vector {
     /// Returns cross product of 3d vector and `other` 3d vector.
     /// If vectors are not 3d returns `None`.
     pub fn cross_product(&self, other: &Vector) -> Option<Vector> {
-        if self.size() != 3 || other.size() != 3 {
+        if self.dim() != 3 || other.dim() != 3 {
             return None;
         }
         Some(Vector::from_xyz(
@@ -140,6 +140,7 @@ impl ops::Index<usize> for Vector {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.coordinates[index]
+        
     }
 }
 
@@ -153,7 +154,7 @@ impl ops::Add<Vector> for Vector {
     type Output = Result<Vector, ()>;
 
     fn add(self, rhs: Vector) -> Self::Output {
-        if self.size() != rhs.size() {
+        if self.dim() != rhs.dim() {
             return Err(());
         }
 

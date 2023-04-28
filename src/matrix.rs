@@ -58,7 +58,7 @@ impl Matrix {
         }
 
         let rows_count = rows.len();
-        let each_row_len: Vec<usize> = rows.iter().map(|vector| vector.size()).collect();
+        let each_row_len: Vec<usize> = rows.iter().map(|vector| vector.dim()).collect();
         let first_row_len = each_row_len[0];
         let all_rows_are_the_same_len = each_row_len
             .iter()
@@ -89,7 +89,7 @@ impl Matrix {
         Matrix {
             rows: vec![row.clone()],
             rows_count: 1,
-            cols_count: row.size()
+            cols_count: row.dim()
         }
     }
 
@@ -339,7 +339,7 @@ impl Matrix {
     }
 
     pub fn set_row(&mut self, row_index: usize, new_row: Vector) -> Result<(), ()> {
-        if new_row.size() != self.rows_count {
+        if new_row.dim() != self.rows_count {
             return Err(());
         }
 
@@ -356,7 +356,7 @@ impl Matrix {
             return Err(());
         }
 
-        if new_col.size() != self.cols_count {
+        if new_col.dim() != self.cols_count {
             return Err(());
         }
 
@@ -415,7 +415,7 @@ impl Matrix {
     }
 
     pub fn multiply_by_vector(&self, other: &Vector) -> Option<Vector> {
-        let vector_len = other.size();
+        let vector_len = other.dim();
         let result: Matrix = (self * &Matrix::from_col(other))?;
         // assert that result matrix is a vector
         debug_assert!(result.cols_count == 1 && result.rows_count == vector_len);

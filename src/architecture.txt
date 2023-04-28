@@ -1,0 +1,66 @@
+let game = Game(screen_resolution, tickrate);
+
+#[game_system]
+struct Rotator {}
+
+impl System for Rotator {
+    fn update(game: Game, delta_seconds: f32) {
+        for entity in game.entity_list {
+            let rotator_info = entity.get_component(typeof(rotator_info));
+            entity.rotate(rotator_info.radians) * delta_seconds;
+        }
+    }
+}
+
+#[game_system]
+struct Mover {}
+impl System for Mover {
+    fn update(game: Game, delta_seconds: f32) {
+        for entity in game.entity_list {
+            let player_input = entity.get_system(typeof(PlayerInput));
+            let rb = entity.get_system(typeof(Rigidbody));
+            let character = entity.get_component(typeof(Character));
+            rb.velocity = player_input ... * character.speed;
+            if player_input.jump_pressed {
+                rb.add_force(Vector::up3, character.jump_force)  
+            } 
+            
+        }
+    }
+}
+
+#[game_component]
+struct RotatorInfo {
+    radians: f32
+}
+
+#[game_component]
+struct PlayerInput {
+    vertical_axis: f32,
+    horizontal_axis: f32,
+    jump_pressed: bool
+}
+
+
+
+let cube = game.create_entity()
+cube.add_system(rotator)
+cube.add_component(rotator_info)
+
+game.start();
+
+
+
+system is trait
+
+for s in systems:
+    s.update(game)
+
+struct s {}
+impl system for s {
+    pub fn update(g: &Game) {
+        mut each in g.get_components()
+    }
+}
+
+game.get_components(where t is TransformComponent)

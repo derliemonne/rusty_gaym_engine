@@ -1,17 +1,27 @@
 pub mod matrix;
 pub mod vector;
-mod game;
+pub mod geometry;
+pub mod engine;
+pub mod components;
+pub mod ecs;
+use std::{vec};
+
 use matrix::*;
 use vector::*;
+use geometry::*;
+use ecs::*;
+use components::*;
 
 
 fn main() {
-    let matrix = Matrix::from_rule(3, 4, |i, j| (i + j) as f32);
+    let coordinate_system = CoordinateSystem::default3();
+    let mut game = Game::new(coordinate_system);
     
-    assert_eq!(matrix, Matrix::from_rows(vec![
-        Vector::new(vec![0.0, 1.0, 2.0, 3.0]),
-        Vector::new(vec![1.0, 2.0, 3.0, 4.0]),
-        Vector::new(vec![2.0, 3.0, 4.0, 5.0])
-    ]).unwrap());
-    
+    game.systems.push(&spam);
+    game.start_loop();
+
+}
+
+fn spam(game: &Game) {
+    println!("Spam system!");
 }
