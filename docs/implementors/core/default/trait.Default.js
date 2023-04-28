@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"rusty_gaym_engine":[["impl&lt;'a&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.68.0/core/default/trait.Default.html\" title=\"trait core::default::Default\">Default</a> for <a class=\"struct\" href=\"rusty_gaym_engine/ecs/struct.Components.html\" title=\"struct rusty_gaym_engine::ecs::Components\">Components</a>&lt;'a&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

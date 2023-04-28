@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["matrix",""],["vector",""]]};
+window.SIDEBAR_ITEMS = {"mod":[["components",""],["ecs",""],["engine",""],["geometry",""],["matrix",""],["vector",""]]};
