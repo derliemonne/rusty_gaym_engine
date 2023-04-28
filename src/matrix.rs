@@ -289,7 +289,7 @@ impl Matrix {
             for j in (i + 1)..matrix_size {
                 let row_i = matrix.get_row(i).unwrap();
                 let row_j = matrix.get_row(j).unwrap();
-                let row_j = (row_j - row_i * matrix[j][i] / matrix[i][i]).unwrap();
+                let row_j = (row_j - (&row_i * (matrix[j][i] / matrix[i][i]))).unwrap();
 
                 matrix[j] = row_j;
 

@@ -138,6 +138,18 @@ impl Vector {
 impl ops::Index<usize> for Vector {
     type Output = f32;
 
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v = Vector::new(vec![1.0, 5.6, 9.0, -0.1]);
+    /// assert_eq!(v[3], -0.1);
+    /// ```
+    /// Next line of code will panic.
+    /// ```should_panic
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// # let v = Vector::new(vec![1.0, 5.6, 9.0, -0.1]);
+    /// v[4];
+    /// ```
     fn index(&self, index: usize) -> &Self::Output {
         &self.coordinates[index]
         
@@ -145,20 +157,46 @@ impl ops::Index<usize> for Vector {
 }
 
 impl ops::IndexMut<usize> for Vector {
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let mut v = Vector::new(vec![1.0, 3.9, 0.0, 1.4]);
+    /// v[2] = 10.0;
+    /// assert_eq!(v, Vector::new(vec![1.0, 3.9, 10.0, 1.4]));
+    /// ```
+    /// Next line will cause program to panic.
+    /// ```should_panic
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// # let mut v = Vector::new(vec![1.0, 3.9, 0.0, 1.4]);
+    /// v[4] = 1.0;
+    /// ```
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         self.coordinates.get_mut(index).unwrap()
     }
 }
 
 impl ops::Add<Vector> for Vector {
-    type Output = Result<Vector, ()>;
+    type Output = Option<Vector>;
 
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v1 = Vector::from_xyz(1.0, 2.0, 3.0);
+    /// let v2 = Vector::from_xyz(4.0, -2.0, 10.0);
+    /// assert_eq!(v1 + v2, Some(Vector::from_xyz(5.0, 0.0, 13.0)));
+    /// ```
+    /// If vectors\` dimensions are different the sum will return `None`:
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v1 = Vector::new(vec![1.0, 2.0, 3.0]);
+    /// let v2 = Vector::new(vec![4.0, -2.0, 10.0, 13.3]);
+    /// assert_eq!(v1 + v2, None);
     fn add(self, rhs: Vector) -> Self::Output {
         if self.dim() != rhs.dim() {
-            return Err(());
+            return None;
         }
 
-        Ok(Vector::new(
+        Some(Vector::new(
             zip(self.coordinates, rhs.coordinates)
                 .map(|(self_x, rhs_x)| self_x + rhs_x)
                 .collect(),
@@ -167,8 +205,21 @@ impl ops::Add<Vector> for Vector {
 }
 
 impl ops::Sub<Vector> for Vector {
-    type Output = Result<Vector, ()>;
+    type Output = Option<Vector>;
 
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v1 = Vector::from_xyz(1.0, 2.0, 3.0);
+    /// let v2 = Vector::from_xyz(4.0, -2.0, 10.0);
+    /// assert_eq!(v1 - v2, Some(Vector::from_xyz(-3.0, 4.0, -7.0)));
+    /// ```
+    /// If vectors\` dimensions are different the sum will return `None`:
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v1 = Vector::new(vec![1.0, 2.0, 3.0]);
+    /// let v2 = Vector::new(vec![4.0, -2.0, 10.0, 13.3]);
+    /// assert_eq!(v1 - v2, None);
     fn sub(self, rhs: Vector) -> Self::Output {
         self + (-rhs)
     }
@@ -177,14 +228,26 @@ impl ops::Sub<Vector> for Vector {
 impl ops::Neg for Vector {
     type Output = Vector;
 
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v1 = Vector::from_xyz(1.0, 2.0, 3.0);
+    /// assert_eq!(-v1, Vector::from_xyz(-1.0, -2.0, -3.0));
+    /// ```
     fn neg(self) -> Self::Output {
-        -1.0 * self
+        -1.0 * &self
     }
 }
 
-impl ops::Mul<f32> for Vector {
+impl ops::Mul<f32> for &Vector {
     type Output = Vector;
 
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v1 = Vector::from_xyz(1.0, 2.0, 3.0);
+    /// assert_eq!(v1 * 2.0, Vector::from_xyz(2.0, 4.0, 6.0));
+    /// ```
     fn mul(self, rhs: f32) -> Self::Output {
         Vector {
             coordinates: self.coordinates.iter().map(|x| x * rhs).collect(),
@@ -192,17 +255,30 @@ impl ops::Mul<f32> for Vector {
     }
 }
 
-impl ops::Mul<Vector> for f32 {
+impl ops::Mul<&Vector> for f32 {
     type Output = Vector;
 
-    fn mul(self, rhs: Vector) -> Self::Output {
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v1 = Vector::from_xyz(1.0, 2.0, 3.0);
+    /// assert_eq!(2.0 * v1, Vector::from_xyz(2.0, 4.0, 6.0));
+    /// ```
+    fn mul(self, rhs: &Vector) -> Self::Output {
         rhs * self
     }
 }
 
-impl ops::Div<f32> for Vector {
+impl ops::Div<f32> for &Vector {
     type Output = Vector;
 
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let v1 = Vector::from_xyz(1.0, 2.0, 3.0);
+    /// assert_eq!(&v1 / 10.0, Vector::from_xyz(0.1, 0.2, 0.3));
+    /// assert_eq!(&v1 / 0.0, Vector::from_xyz(f32::INFINITY, f32::INFINITY, f32::INFINITY));
+    /// ```
     fn div(self, rhs: f32) -> Self::Output {
         self * (1.0 / rhs)
     }
@@ -215,6 +291,13 @@ impl PartialEq for Vector {
 }
 
 impl ops::MulAssign<f32> for Vector {
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let mut v = Vector::from_xyz(1.0, 2.0, 3.0);
+    /// v *= 5.0;
+    /// assert_eq!(v, Vector::from_xyz(5.0, 10.0, 15.0));
+    /// ```
     fn mul_assign(&mut self, rhs: f32) {
         for x in self.coordinates.iter_mut() {
             *x *= rhs;
