@@ -1,4 +1,5 @@
 use std::iter::zip;
+use std::ops::Deref;
 use std::{ops, vec};
 use crate::matrix::Matrix;
 
@@ -46,6 +47,14 @@ impl Vector {
         Some(Matrix::rotation_matrix3d(x_radians, y_radians, z_radians)
             .multiply_by_vector(self)
             .unwrap())
+    }
+
+    pub fn normalized(&self) -> Vector {
+        self / self.magnitude()
+    }
+
+    pub fn normalize(&mut self) {
+        *self /= self.magnitude();
     }
 
     /// Returns number of components in vector.
@@ -255,6 +264,19 @@ impl ops::Mul<f32> for &Vector {
     }
 }
 
+impl ops::MulAssign<f32> for Vector {
+    /// # Example
+    /// ```
+    /// # use rusty_gaym_engine::vector::Vector;
+    /// let mut v = Vector::from_xyz(1.0, 2.0, 3.0);
+    /// v *= 5.0;
+    /// assert_eq!(v, Vector::from_xyz(5.0, 10.0, 15.0));
+    /// ```
+    fn mul_assign(&mut self, rhs: f32) {
+        self.coordinates.iter_mut().for_each(|c| *c *= rhs)
+    }
+}
+
 impl ops::Mul<&Vector> for f32 {
     type Output = Vector;
 
@@ -284,26 +306,18 @@ impl ops::Div<f32> for &Vector {
     }
 }
 
+impl ops::DivAssign<f32> for Vector {
+    fn div_assign(&mut self, rhs: f32) {
+        *self *= 1.0 / rhs
+    }
+}
+
 impl PartialEq for Vector {
     fn eq(&self, other: &Self) -> bool {
         self.coordinates == other.coordinates
     }
 }
 
-impl ops::MulAssign<f32> for Vector {
-    /// # Example
-    /// ```
-    /// # use rusty_gaym_engine::vector::Vector;
-    /// let mut v = Vector::from_xyz(1.0, 2.0, 3.0);
-    /// v *= 5.0;
-    /// assert_eq!(v, Vector::from_xyz(5.0, 10.0, 15.0));
-    /// ```
-    fn mul_assign(&mut self, rhs: f32) {
-        for x in self.coordinates.iter_mut() {
-            *x *= rhs;
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {

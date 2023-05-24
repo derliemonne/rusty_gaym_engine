@@ -2,7 +2,6 @@ pub mod matrix;
 pub mod vector;
 pub mod geometry;
 pub mod engine;
-pub mod components;
 pub mod ecs;
 use std::{vec};
 
@@ -10,7 +9,6 @@ use matrix::*;
 use vector::*;
 use geometry::*;
 use ecs::*;
-use components::*;
 
 
 fn main() {
