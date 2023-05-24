@@ -1,14 +1,9 @@
-pub mod matrix;
-pub mod vector;
-pub mod geometry;
+pub mod math;
 pub mod engine;
-pub mod ecs;
-use std::{vec};
 
-use matrix::*;
-use vector::*;
-use geometry::*;
-use ecs::*;
+use std::{vec};
+use math::*;
+use engine::*;
 
 
 fn main() {

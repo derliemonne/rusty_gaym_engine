@@ -1,18 +1,6 @@
-use crate::geometry::*;
-use uuid::Uuid;
-use std::collections::HashMap;
+use super::*;
+use crate::math::*;
 
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Entity {
-    pub id: Uuid,
-}
-
-impl Entity {
-    pub fn new() -> Entity {
-        Entity { id: Uuid::new_v4() }
-    }
-}
 
 pub struct Game<'a> {
     pub coordinate_system: CoordinateSystem,

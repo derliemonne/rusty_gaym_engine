@@ -1,7 +1,7 @@
 use std::iter::zip;
 use std::ops::Deref;
 use std::{ops, vec};
-use crate::matrix::Matrix;
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct Vector {

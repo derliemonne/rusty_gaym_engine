@@ -1,5 +1,4 @@
-use crate::vector::Vector;
-
+use super::*;
 
 #[derive(Clone)]
 pub struct Ray {

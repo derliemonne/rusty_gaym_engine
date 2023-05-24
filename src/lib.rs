@@ -1,9 +1,6 @@
-pub mod matrix;
-pub mod vector;
-pub mod engine;
-pub mod geometry;
-pub mod ecs;
-use matrix::*;
+pub mod math;
+
+use math::*;
 use vector::*;
 
 fn print(matrix: &Matrix) {

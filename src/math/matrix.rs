@@ -1,4 +1,4 @@
-use crate::vector::Vector;
+use super::vector::Vector;
 use std::iter::zip;
 use std::ops::{Index, IndexMut};
 use std::{fmt, ops, vec};
