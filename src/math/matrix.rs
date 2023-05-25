@@ -1,17 +1,18 @@
 use super::vector::Vector;
+use std::fmt::Display;
 use std::iter::zip;
-use std::ops::{Index, IndexMut, Add};
+use std::ops::{Index, IndexMut, Add, Mul, Div, Sub, Neg};
 use std::{fmt, ops, vec};
 
-
 #[derive(Clone)]
-pub struct Matrix<T> {
+pub struct Matrix<T: Clone> {
     rows: Vec<Vector<T>>,
     rows_count: usize,
     cols_count: usize,
 }
 
-impl<T> Matrix<T> {
+impl<T> Matrix<T>
+where T: Clone {
     /// Returns matrix with zero columns and zero rows.
     pub const fn empty() -> Matrix<T> {
         Matrix {
@@ -40,11 +41,14 @@ impl<T> Matrix<T> {
     /// ]);
     /// assert!(m.is_none());
     /// ```
-    pub fn new(rows_count: usize, cols_count: usize, elements: Vec<T>) -> Option<Matrix<T>> {
+    pub fn new_cloned(rows_count: usize, cols_count: usize, elements: Vec<T>) -> Option<Matrix<T>> {
         if rows_count * cols_count != elements.len() {
             return None;
         }
-        Some(Matrix::from_rule(rows_count, cols_count, |i, j| elements[i * cols_count + j]))
+        Some(Matrix::from_rule(
+            rows_count, 
+            cols_count, 
+            |i, j| elements.get(i * cols_count + j).unwrap().clone()))
     }
 
     /// Returns matrix with specified rows.
@@ -85,16 +89,17 @@ impl<T> Matrix<T> {
     }
 
     /// Returns matrix made of one row.
-    pub fn from_row(row: &Vector<T>) -> Matrix<T> {
+    pub fn from_row(row: Vector<T>) -> Matrix<T> {
+        let cols_count = row.dim();
         Matrix {
-            rows: vec![row.clone()],
+            rows: vec![row],
             rows_count: 1,
-            cols_count: row.dim()
+            cols_count
         }
     }
 
     /// Returns matrix made of one column.
-    pub fn from_col(col: &Vector<T>) -> Matrix<T> {
+    pub fn from_col(col: Vector<T>) -> Matrix<T> {
         Matrix::from_row(col).transposed()
     }
 
@@ -132,13 +137,17 @@ impl<T> Matrix<T> {
             return Matrix::empty()
         }
 
-        let mut matrix = Matrix::zeroes(rows_count, cols_count);
+        let mut rows = vec![];
         for i in 0..rows_count {
+            let mut row = vec![];
             for j in 0..cols_count {
-                matrix[i][j] = f(i, j);
+                row.push(f(i, j));
             }
+            let row = Vector::new(row);
+            rows.push(row);
         }
-        return matrix;
+
+        Matrix { rows, rows_count, cols_count }
     }
 
     pub fn get_minor(&self, rows_for_exclusion: Vec<usize>, cols_for_exclusion: Vec<usize>) -> Matrix<T> {
@@ -169,13 +178,31 @@ impl<T> Matrix<T> {
     pub fn get_col(&self, index: usize) -> Option<Vector<T>> {
         self.transposed().get_row(index)
     }
-
-    pub fn get(&self, row_index: usize, col_index: usize) -> Option<T> {
-        self.get_row(row_index)?.get(col_index)
-    }
     
     pub fn transposed(&self) -> Matrix<T> {
-        Matrix::from_rule(self.cols_count, self.rows_count, |i, j| self[j][i])
+        Matrix::from_rule(self.cols_count, self.rows_count, |i, j| self[j][i].clone())
+    }
+
+    pub fn multiply(&self, other: &Matrix<T>) -> Option<Matrix<T>>
+    where T: Add<Output = T> + Mul<Output = T> + std::iter::Sum + Copy {
+        if self.cols_count != other.rows_count {
+            return None;
+        }
+        Some(Matrix::from_rule(self.rows_count, other.cols_count, |i, j| {
+            (0..self.cols_count)
+                .map(|t: usize| self[i][t] * other[t][j])
+                .sum()
+        }))
+    }
+
+    pub fn multiply_by_vector(&self, other: &Vector<T>) -> Option<Vector<T>>
+    where T: Copy + Add<Output = T> + Mul<Output = T> + std::iter::Sum {
+        let vector_len = other.dim();
+        let result: Matrix<T> = (self * &Matrix::from_col(other.clone()))?;
+        // assert that result matrix is a vector
+        debug_assert!(result.cols_count == 1 && result.rows_count == vector_len);
+        let result: Vector<T> = result.get_col(0).unwrap();
+        Some(result)
     }
 
     pub fn set_row(&mut self, row_index: usize, new_row: Vector<T>) -> Result<(), ()> {
@@ -201,7 +228,7 @@ impl<T> Matrix<T> {
         }
 
         for i in 0..self.cols_count {
-            self.rows[i].set(col_index, new_col[i])?;
+            self.rows[i].set(col_index, new_col[i].clone())?;
         }
 
         Ok(())
@@ -241,6 +268,42 @@ impl<T> Matrix<T> {
         self.set_row(b_index, a_row)?;
 
         Ok(())
+    }
+}
+
+impl<Copyable> Matrix<Copyable> 
+where Copyable: Copy {
+    pub fn get(&self, row_index: usize, col_index: usize) -> Option<Copyable> {
+        self.get_row(row_index)?.get(col_index)
+    }
+
+    /// Return matrix with specified size and elements. 
+    /// 
+    /// # Examples
+    /// ```
+    /// # use rusty_gaym_engine::matrix::Matrix;
+    /// let m = Matrix::new(3, 3, vec![
+    ///     1.0, 2.0, 3.0,
+    ///     4.0, 5.0, 6.0,
+    ///     7.0, 8.0, 9.0,
+    /// ]);
+    /// assert!(m.is_some());
+    ///
+    /// let m = Matrix::new(3, 3, vec![
+    ///     1.0, 2.0, 3.0, 4.0,
+    ///     4.0, 5.0, 6.0,
+    ///     7.0, 8.0, 9.0, 0.0, 10.0,
+    /// ]);
+    /// assert!(m.is_none());
+    /// ```
+    pub fn new(rows_count: usize, cols_count: usize, elements: Vec<Copyable>) -> Option<Matrix<Copyable>> {
+        if rows_count * cols_count != elements.len() {
+            return None;
+        }
+        Some(Matrix::from_rule(
+            rows_count, 
+            cols_count, 
+            |i, j| elements[i * cols_count + j]))
     }
 }
 
@@ -372,7 +435,7 @@ impl Matrix<f32> {
         // Now matrix is ready to count its determinant by multiplying all elements on main diagonal.
         let mut determinant: f32 = sign as f32;
         for i in 0..matrix_size {
-            determinant *= matrix.get(i, i).unwrap();
+            determinant *= matrix[i][i];
         }
 
         Some(determinant)
@@ -402,42 +465,23 @@ impl Matrix<f32> {
 
         return true;
     }
-
-    pub fn multiply(&self, other: &Matrix<f32>) -> Option<Matrix<f32>> {
-        if self.cols_count != other.rows_count {
-            return None;
-        }
-        Some(Matrix::from_rule(self.rows_count, other.cols_count, |i, j| {
-            (0..self.cols_count)
-                .map(|t: usize| self.get(i, t).unwrap() * other.get(t, j).unwrap())
-                .sum()
-        }))
-    }
-
-    pub fn multiply_by_vector(&self, other: &Vector<f32>) -> Option<Vector<f32>> {
-        let vector_len = other.dim();
-        let result: Matrix = (self * &Matrix::from_col(other))?;
-        // assert that result matrix is a vector
-        debug_assert!(result.cols_count == 1 && result.rows_count == vector_len);
-        let result: Vector<f32> = result.get_col(0).unwrap();
-        Some(result)
-    }
 }
 
-impl<T> Index<usize> for Matrix<T> {
+impl<T: Clone> Index<usize> for Matrix<T> {
     type Output = Vector<T>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.rows[index]
     }
 }
 
-impl<T> IndexMut<usize> for Matrix<T> {
+impl<T: Clone> IndexMut<usize> for Matrix<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.rows[index]
     }
 }
 
-impl<T> PartialEq for Matrix<T> {
+impl<T> PartialEq for Matrix<T>
+where T: PartialEq + Clone {
     fn eq(&self, other: &Self) -> bool {
         if self.cols_count != other.cols_count || self.rows_count != other.rows_count {
             return false
@@ -451,7 +495,8 @@ impl<T> PartialEq for Matrix<T> {
     }
 }
 
-impl<T> ops::Add<Matrix<T>> for Matrix<T> {
+impl<T> Add<Matrix<T>> for Matrix<T> 
+where T: Add<Output = T> + Clone {
     type Output = Option<Matrix<T>>;
 
     fn add(self, rhs: Matrix<T>) -> Self::Output {
@@ -460,15 +505,18 @@ impl<T> ops::Add<Matrix<T>> for Matrix<T> {
         }
 
         Matrix::from_rows(
-            zip(self.rows, rhs.rows)
+            self.rows
+                .into_iter()
+                .zip(rhs.rows.into_iter())
                 .map(|(self_row, rhs_row)| (self_row + rhs_row).unwrap())
                 .collect()
+
         )
     }
 }
 
-impl<T> ops::Mul<f32> for Matrix<T> {
-    type Output = Matrix<T>;
+impl Mul<f32> for Matrix<f32> {
+    type Output = Matrix<f32>;
 
     fn mul(self, rhs: f32) -> Self::Output {
         let mut matrix = self.clone();
@@ -479,7 +527,7 @@ impl<T> ops::Mul<f32> for Matrix<T> {
     }
 }
 
-impl ops::Mul<Matrix<f32>> for f32 {
+impl Mul<Matrix<f32>> for f32 {
     type Output = Matrix<f32>;
 
     fn mul(self, rhs: Matrix<f32>) -> Self::Output {
@@ -487,7 +535,7 @@ impl ops::Mul<Matrix<f32>> for f32 {
     }
 }
 
-impl ops::Div<f32> for Matrix<f32> {
+impl Div<f32> for Matrix<f32> {
     type Output = Matrix<f32>;
 
     fn div(self, rhs: f32) -> Self::Output {
@@ -495,15 +543,29 @@ impl ops::Div<f32> for Matrix<f32> {
     }
 }
 
-impl<T> ops::Sub<Matrix<T>> for Matrix<T> {
-    type Output = Option<Matrix<T>>;
+impl<T> Neg for Matrix<T> 
+where T: Copy + Neg<Output = T> {
+    type Output = Matrix<T>;
 
-    fn sub(self, rhs: Matrix<T>) -> Self::Output {
-        self + -1.0 * rhs
+    fn neg(self) -> Self::Output {
+        Matrix::from_rule(
+            self.rows_count, 
+            self.cols_count, 
+            |i, j| -self[i][j])
     }
 }
 
-impl<T> ops::Mul<Matrix<T>> for Matrix<T> {
+impl<T> Sub<Matrix<T>> for Matrix<T>
+where T: Copy + Neg<Output = T> + Add<Output = T> {
+    type Output = Option<Matrix<T>>;
+
+    fn sub(self, rhs: Matrix<T>) -> Self::Output {
+        self + -rhs
+    }
+}
+
+impl<T> Mul<Matrix<T>> for Matrix<T>
+where T: Copy + Add<Output = T> + Mul<Output = T> + std::iter::Sum {
     type Output = Option<Matrix<T>>;
 
     fn mul(self, rhs: Matrix<T>) -> Self::Output {
@@ -511,7 +573,8 @@ impl<T> ops::Mul<Matrix<T>> for Matrix<T> {
     }
 }
 
-impl<T> ops::Mul<&Matrix<T>> for &Matrix<T> {
+impl<T> Mul<&Matrix<T>> for &Matrix<T>
+where T: Copy + Add<Output = T> + Mul<Output = T> + std::iter::Sum {
     type Output = Option<Matrix<T>>;
 
     fn mul(self, rhs: &Matrix<T>) -> Self::Output {
@@ -519,7 +582,8 @@ impl<T> ops::Mul<&Matrix<T>> for &Matrix<T> {
     }
 }
 
-impl<T> ops::Mul<Vector<T>> for Matrix<T> {
+impl<T> Mul<Vector<T>> for Matrix<T>
+where T: Copy + Add<Output = T> + Mul<Output = T> + std::iter::Sum {
     type Output = Option<Vector<T>>;
 
     fn mul(self, rhs: Vector<T>) -> Self::Output {
@@ -527,7 +591,9 @@ impl<T> ops::Mul<Vector<T>> for Matrix<T> {
     }
 }
 
-impl<T> ops::Mul<&Vector<T>> for &Matrix<T> {
+impl<T> Mul<&Vector<T>> for &Matrix<T>
+where T: Copy + Add<Output = T> + Mul<Output = T> + std::iter::Sum {
+
     type Output = Option<Vector<T>>;
 
     fn mul(self, rhs: &Vector<T>) -> Self::Output {
@@ -536,7 +602,8 @@ impl<T> ops::Mul<&Vector<T>> for &Matrix<T> {
 }
 
 /// Generated by chat-gpt
-impl<T> fmt::Debug for Matrix<T> {
+impl<T> fmt::Debug for Matrix<T>
+where T: Clone + Display {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Find the maximum string length of any element in the matrix
         let mut max_len = 0;
@@ -569,7 +636,7 @@ mod tests {
     fn matrix_from_rows() {
         let m = Matrix::from_rows(vec![
             Vector::from_xyz(1.0, 2.0, 3.0),
-           Vector::from_xyz(3.0, 4.0, 5.0),
+            Vector::from_xyz(3.0, 4.0, 5.0),
             Vector::from_xyz(5.0, 6.0, 7.0),
         ])
         .unwrap();

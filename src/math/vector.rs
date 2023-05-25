@@ -1,5 +1,6 @@
 use std::iter::zip;
-use std::ops::{MulAssign, Mul};
+use std::ops::{MulAssign, Mul, Div};
+use std::process::Output;
 use std::{ops, vec};
 use super::*;
 
@@ -10,8 +11,16 @@ pub struct Vector<T> {
 }
 
 impl<T> Vector<T> {
-    pub const fn new(coordinates: Vec<T>) -> Vector<T> {
-        Vector { elements: coordinates }
+    pub const fn new(elements: Vec<T>) -> Vector<T> {
+        Vector { elements }
+    }
+
+    /// Get reference to vector component.
+    pub fn get_ref(&self, index: usize) -> Option<&T> {
+        match self.elements.get(index) {
+            None => return None,
+            Some(x) => return Some(x),
+        }
     }
 
     /// Returns number of components in vector.
@@ -19,21 +28,24 @@ impl<T> Vector<T> {
         self.elements.len()
     }
 
-    /// Access vector component.
-    pub fn get(&self, index: usize) -> Option<f32> {
-        match self.elements.get(index) {
-            None => return None,
-            Some(x) => return Some(*x),
-        }
-    }
-
-    pub fn set(&mut self, index: usize, value: f32) -> Result<(), ()> {
+    pub fn set(&mut self, index: usize, value: T) -> Result<(), ()> {
         match self.elements.get_mut(index) {
             None => return Err(()),
             Some(x) => *x = value,
         };
         Ok(())
     }
+}
+
+impl<Copyable> Vector<Copyable>
+where Copyable: Copy {
+        /// Access vector component.
+        pub fn get(&self, index: usize) -> Option<Copyable> {
+            match self.elements.get(index) {
+                None => return None,
+                Some(x) => return Some(*x),
+            }
+        }
 }
 
 impl Vector<f32> {
@@ -148,7 +160,7 @@ impl Vector<f32> {
 }
 
 impl<T> ops::Index<usize> for Vector<T> {
-    type Output = f32;
+    type Output = T;
 
     /// # Example
     /// ```
@@ -187,7 +199,8 @@ impl<T> ops::IndexMut<usize> for Vector<T> {
     }
 }
 
-impl<T> ops::Add<T> for Vector<T> {
+
+impl<T: ops::Add<Output = T>> ops::Add<Vector<T>> for Vector<T> {
     type Output = Option<Vector<T>>;
 
     /// # Example
@@ -203,18 +216,22 @@ impl<T> ops::Add<T> for Vector<T> {
     /// let v1 = Vector::new(vec![1.0, 2.0, 3.0]);
     /// let v2 = Vector::new(vec![4.0, -2.0, 10.0, 13.3]);
     /// assert_eq!(v1 + v2, None);
-    fn add(self, rhs: Vector<f32>) -> Self::Output {
+    fn add(self, rhs: Vector<T>) -> Self::Output {
         if self.dim() != rhs.dim() {
             return None;
         }
 
         Some(Vector::new(
-            zip(self.elements, rhs.elements)
+            self.elements
+                .into_iter()
+                .zip(rhs.elements.into_iter())
                 .map(|(self_x, rhs_x)| self_x + rhs_x)
-                .collect(),
+                .collect()
         ))
     }
 }
+
+
 
 impl ops::Sub<Vector<f32>> for Vector<f32> {
     type Output = Option<Vector<f32>>;
@@ -237,8 +254,8 @@ impl ops::Sub<Vector<f32>> for Vector<f32> {
     }
 }
 
-impl<T> ops::Neg for Vector<T> {
-    type Output = Vector<f32>;
+impl<T: ops::Neg<Output = T>> ops::Neg for Vector<T> {
+    type Output = Vector<T>;
 
     /// # Example
     /// ```
@@ -247,11 +264,17 @@ impl<T> ops::Neg for Vector<T> {
     /// assert_eq!(-v1, Vector::from_xyz(-1.0, -2.0, -3.0));
     /// ```
     fn neg(self) -> Self::Output {
-        -1.0 * &self
+        Vector::new(
+            self.elements
+                .into_iter()
+                .map(|x| -x)
+                .collect()
+        )
     }
 }
 
-impl<T> ops::Mul<T> for &Vector<T> {
+impl<T> Mul<T> for &Vector<T>
+where T : Copy + Mul<Output = T> {
     type Output = Vector<T>;
 
     /// # Example
@@ -261,13 +284,17 @@ impl<T> ops::Mul<T> for &Vector<T> {
     /// assert_eq!(v1 * 2.0, Vector::from_xyz(2.0, 4.0, 6.0));
     /// ```
     fn mul(self, rhs: T) -> Self::Output {
-        Vector {
-            elements: self.elements.iter().map(|x| x * rhs).collect(),
-        }
+        Vector::new(
+            self.elements
+                .iter()
+                .map(|x| *x * rhs)
+                .collect()
+        )
     }
 }
 
-impl<T> ops::MulAssign<T> for Vector<T> {
+impl<T> MulAssign<T> for Vector<T>
+where T: Copy + MulAssign {
     /// # Example
     /// ```
     /// # use rusty_gaym_engine::vector::Vector;
@@ -294,8 +321,8 @@ impl ops::Mul<&Vector<f32>> for f32 {
     }
 }
 
-impl<T> ops::Div<T> for &Vector<T> {
-    type Output = Vector<T>;
+impl ops::Div<f32> for &Vector<f32> {
+    type Output = Vector<f32>;
 
     /// # Example
     /// ```
@@ -304,18 +331,18 @@ impl<T> ops::Div<T> for &Vector<T> {
     /// assert_eq!(&v1 / 10.0, Vector::from_xyz(0.1, 0.2, 0.3));
     /// assert_eq!(&v1 / 0.0, Vector::from_xyz(f32::INFINITY, f32::INFINITY, f32::INFINITY));
     /// ```
-    fn div(self, rhs: T) -> Self::Output {
+    fn div(self, rhs: f32) -> Self::Output {
         self * (1.0 / rhs)
     }
 }
 
-impl<T> ops::DivAssign<T> for Vector<T> {
-    fn div_assign(&mut self, rhs: T) {
+impl ops::DivAssign<f32> for Vector<f32> {
+    fn div_assign(&mut self, rhs: f32) {
         *self *= 1.0 / rhs
     }
 }
 
-impl<T> PartialEq for Vector<T> {
+impl<T: PartialEq> PartialEq for Vector<T> {
     fn eq(&self, other: &Self) -> bool {
         self.elements == other.elements
     }
