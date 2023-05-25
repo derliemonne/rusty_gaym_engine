@@ -1,19 +1,19 @@
 use super::vector::Vector;
 use std::iter::zip;
-use std::ops::{Index, IndexMut};
+use std::ops::{Index, IndexMut, Add};
 use std::{fmt, ops, vec};
 
 
 #[derive(Clone)]
-pub struct Matrix {
-    rows: Vec<Vector>,
+pub struct Matrix<T> {
+    rows: Vec<Vector<T>>,
     rows_count: usize,
     cols_count: usize,
 }
 
-impl Matrix {
+impl<T> Matrix<T> {
     /// Returns matrix with zero columns and zero rows.
-    pub const fn empty() -> Matrix {
+    pub const fn empty() -> Matrix<T> {
         Matrix {
             rows: vec![],
             rows_count: 0,
@@ -40,7 +40,7 @@ impl Matrix {
     /// ]);
     /// assert!(m.is_none());
     /// ```
-    pub fn new(rows_count: usize, cols_count: usize, elements: Vec<f32>) -> Option<Matrix> {
+    pub fn new(rows_count: usize, cols_count: usize, elements: Vec<T>) -> Option<Matrix<T>> {
         if rows_count * cols_count != elements.len() {
             return None;
         }
@@ -52,7 +52,7 @@ impl Matrix {
     /// If `rows` is empty returns empty matrix.
     /// 
     /// Each row in `rows` is a `Vector`, all vectors must be the same size, otherwise function returns `None`.
-    pub fn from_rows(rows: Vec<Vector>) -> Option<Matrix> {
+    pub fn from_rows(rows: Vec<Vector<T>>) -> Option<Matrix<T>> {
         if rows.len() == 0 {
             return Some(Matrix::empty());
         }
@@ -80,12 +80,12 @@ impl Matrix {
     /// If `cols` is empty returns empty matrix.
     /// 
     /// Each column in `cols` is a `Vector`, all vectors must be the same size, otherwise function returns `None`.
-    pub fn from_cols(cols: Vec<Vector>) -> Option<Matrix> {
+    pub fn from_cols(cols: Vec<Vector<T>>) -> Option<Matrix<T>> {
         Some(Matrix::from_rows(cols)?.transposed())
     }
 
     /// Returns matrix made of one row.
-    pub fn from_row(row: &Vector) -> Matrix {
+    pub fn from_row(row: &Vector<T>) -> Matrix<T> {
         Matrix {
             rows: vec![row.clone()],
             rows_count: 1,
@@ -94,10 +94,9 @@ impl Matrix {
     }
 
     /// Returns matrix made of one column.
-    pub fn from_col(col: &Vector) -> Matrix {
+    pub fn from_col(col: &Vector<T>) -> Matrix<T> {
         Matrix::from_row(col).transposed()
     }
-
 
     /// Creates and returns new Matrix instance with the specified number of rows and columns, 
     /// using the provided closure `f` to initialize each element in the matrix.
@@ -125,9 +124,9 @@ impl Matrix {
     ///     Vector::new(vec![2.0, 3.0, 4.0, 5.0])
     /// ]).unwrap());
     /// ```
-    pub fn from_rule<F>(rows_count: usize, cols_count: usize, f: F) -> Matrix
+    pub fn from_rule<Function>(rows_count: usize, cols_count: usize, f: Function) -> Matrix<T>
     where
-        F: Fn(usize, usize) -> f32,
+        Function: Fn(usize, usize) -> T,
     {
         if rows_count == 0 || cols_count == 0 {
             return Matrix::empty()
@@ -142,78 +141,7 @@ impl Matrix {
         return matrix;
     }
 
-    /// Returns an identity matrix of the specified size.
-    /// The identity matrix is a square matrix with ones on the diagonal and zeroes elsewhere.
-    ///
-    /// # Arguments
-    ///
-    /// * `size` - The size of the square matrix. If `size` is zero, empty matrix will be returned.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use rusty_gaym_engine::matrix::Matrix;
-    /// let identity = Matrix::identity(3);
-    /// assert_eq!(identity, Matrix::new(3, 3, vec![1.0, 0.0, 0.0,
-    ///                                             0.0, 1.0, 0.0,
-    ///                                             0.0, 0.0, 1.0]).unwrap());
-    /// ```
-    pub fn identity(size: usize) -> Matrix {
-        Matrix::from_rule(size, size, |i, j| 
-        if i == j {
-            1.0
-        } else {
-            0.0
-        })
-    }
-
-    pub fn zeroes(rows_count: usize, cols_count: usize) -> Matrix {
-        let rows = vec![Vector::new(vec![0.0; cols_count]); rows_count];
-        Matrix { rows_count, cols_count, rows }
-    }
-
-    pub fn gram_matrix(bases: Vec<Vector>) -> Matrix {
-        Matrix::from_rule(bases.len(), bases.len(), |i, j| {
-            bases[i].dot_product(&bases[j])
-        })
-    }
-
-    pub fn adjoint_matrix(&self) -> Option<Matrix> {
-        self.determinant()?;
-        let adjoint = Matrix::from_rule(self.rows_count, self.cols_count, |i, j|
-            if (i + j) % 2 == 0 {1.0} else {-1.0} * self.get_minor(vec![i], vec![j]).determinant().unwrap())
-            .transposed();
-        
-        Some(adjoint)
-    }
-
-    pub fn rotation_matrix2d(radians: f32) -> Matrix {
-        Matrix::from_rows(vec![
-            Vector::new(vec![radians.cos(), -radians.sin()]),
-            Vector::new(vec![radians.sin(), radians.cos()])
-        ]).unwrap()
-    }
-
-    pub fn rotation_matrix3d(x_radians: f32, y_radians: f32, z_radians: f32) -> Matrix {
-        let x_rotation = Matrix::from_rows(vec![
-            Vector::new(vec![1.0, 0.0, 0.0]),
-            Vector::new(vec![0.0, x_radians.cos(), -x_radians.sin()]),
-            Vector::new(vec![0.0, x_radians.sin(), x_radians.cos()])
-        ]).unwrap();
-        let y_rotation = Matrix::from_rows(vec![
-            Vector::new(vec![y_radians.cos(), 0.0, y_radians.sin()]),
-            Vector::new(vec![0.0, 1.0, 0.0]),
-            Vector::new(vec![-y_radians.sin(), 0.0, y_radians.cos()])
-        ]).unwrap();
-        let z_rotation = Matrix::from_rows(vec![
-            Vector::new(vec![z_radians.cos(), -z_radians.sin(), 0.0]),
-            Vector::new(vec![z_radians.sin(), z_radians.cos(), 0.0]),
-            Vector::new(vec![0.0, 0.0, 1.0])
-        ]).unwrap();
-        ((x_rotation * y_rotation).unwrap() * z_rotation).unwrap()
-    }
-
-    pub fn get_minor(&self, rows_for_exclusion: Vec<usize>, cols_for_exclusion: Vec<usize>) -> Matrix {
+    pub fn get_minor(&self, rows_for_exclusion: Vec<usize>, cols_for_exclusion: Vec<usize>) -> Matrix<T> {
         let included_rows = (0..self.rows_count)
             .filter(|i| !rows_for_exclusion.contains(i))
             .map(|i| self[i].clone())
@@ -234,16 +162,158 @@ impl Matrix {
         self.cols_count
     }
 
-    pub fn get_row(&self, index: usize) -> Option<Vector> {
+    pub fn get_row(&self, index: usize) -> Option<Vector<T>> {
         self.rows.get(index).map(|row| row.clone())
     }
 
-    pub fn get_col(&self, index: usize) -> Option<Vector> {
+    pub fn get_col(&self, index: usize) -> Option<Vector<T>> {
         self.transposed().get_row(index)
     }
 
-    pub fn get(&self, row_index: usize, col_index: usize) -> Option<f32> {
+    pub fn get(&self, row_index: usize, col_index: usize) -> Option<T> {
         self.get_row(row_index)?.get(col_index)
+    }
+    
+    pub fn transposed(&self) -> Matrix<T> {
+        Matrix::from_rule(self.cols_count, self.rows_count, |i, j| self[j][i])
+    }
+
+    pub fn set_row(&mut self, row_index: usize, new_row: Vector<T>) -> Result<(), ()> {
+        if new_row.dim() != self.rows_count {
+            return Err(());
+        }
+
+        match self.rows.get_mut(row_index) {
+            Some(row) => *row = new_row,
+            None => return Err(()),
+        }
+
+        Ok(())
+    }
+
+    pub fn set_col(&mut self, col_index: usize, new_col: Vector<T>) -> Result<(), ()> {
+        if col_index >= self.cols_count {
+            return Err(());
+        }
+
+        if new_col.dim() != self.cols_count {
+            return Err(());
+        }
+
+        for i in 0..self.cols_count {
+            self.rows[i].set(col_index, new_col[i])?;
+        }
+
+        Ok(())
+    }
+
+    pub fn set(&mut self, row_index: usize, col_index: usize, value: T) -> Result<(), ()> {
+        let row = match self.rows.get_mut(row_index) {
+            None => return Err(()),
+            Some(row) => row,
+        };
+
+        let x = match row.elements.get_mut(col_index) {
+            None => return Err(()),
+            Some(x) => x,
+        };
+
+        *x = value;
+
+        Ok(())
+    }
+
+    pub fn swap_cols(&mut self, a_index: usize, b_index: usize) -> Result<(), ()> {
+        let a_col = self.get_col(a_index).ok_or(())?;
+        let b_col = self.get_col(b_index).ok_or(())?;
+
+        self.set_col(a_index, b_col)?;
+        self.set_col(b_index, a_col)?;
+
+        Ok(())
+    }
+
+    pub fn swap_rows(&mut self, a_index: usize, b_index: usize) -> Result<(), ()> {
+        let a_row = self.get_row(a_index).ok_or(())?;
+        let b_row = self.get_row(b_index).ok_or(())?;
+
+        self.set_row(a_index, b_row)?;
+        self.set_row(b_index, a_row)?;
+
+        Ok(())
+    }
+}
+
+impl Matrix<f32> {
+    /// Returns an identity matrix of the specified size.
+    /// The identity matrix is a square matrix with ones on the diagonal and zeroes elsewhere.
+    ///
+    /// # Arguments
+    ///
+    /// * `size` - The size of the square matrix. If `size` is zero, empty matrix will be returned.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rusty_gaym_engine::matrix::Matrix;
+    /// let identity = Matrix::identity(3);
+    /// assert_eq!(identity, Matrix::new(3, 3, vec![1.0, 0.0, 0.0,
+    ///                                             0.0, 1.0, 0.0,
+    ///                                             0.0, 0.0, 1.0]).unwrap());
+    /// ```
+    pub fn identity(size: usize) -> Matrix<f32> {
+        Matrix::from_rule(size, size, |i, j| 
+        if i == j {
+            1.0
+        } else {
+            0.0
+        })
+    }
+
+    pub fn zeroes(rows_count: usize, cols_count: usize) -> Matrix<f32> {
+        let rows = vec![Vector::new(vec![0.0; cols_count]); rows_count];
+        Matrix { rows_count, cols_count, rows }
+    }
+
+    pub fn gram_matrix(bases: Vec<Vector<f32>>) -> Matrix<f32> {
+        Matrix::from_rule(bases.len(), bases.len(), |i, j| {
+            bases[i].dot_product(&bases[j])
+        })
+    }
+
+    pub fn adjoint_matrix(&self) -> Option<Matrix<f32>> {
+        self.determinant()?;
+        let adjoint = Matrix::from_rule(self.rows_count, self.cols_count, |i, j|
+            if (i + j) % 2 == 0 {1.0} else {-1.0} * self.get_minor(vec![i], vec![j]).determinant().unwrap())
+            .transposed();
+        
+        Some(adjoint)
+    }
+
+    pub fn rotation_matrix2d(radians: f32) -> Matrix<f32> {
+        Matrix::from_rows(vec![
+            Vector::new(vec![radians.cos(), -radians.sin()]),
+            Vector::new(vec![radians.sin(), radians.cos()])
+        ]).unwrap()
+    }
+
+    pub fn rotation_matrix3d(x_radians: f32, y_radians: f32, z_radians: f32) -> Matrix<f32> {
+        let x_rotation = Matrix::from_rows(vec![
+            Vector::new(vec![1.0, 0.0, 0.0]),
+            Vector::new(vec![0.0, x_radians.cos(), -x_radians.sin()]),
+            Vector::new(vec![0.0, x_radians.sin(), x_radians.cos()])
+        ]).unwrap();
+        let y_rotation = Matrix::from_rows(vec![
+            Vector::new(vec![y_radians.cos(), 0.0, y_radians.sin()]),
+            Vector::new(vec![0.0, 1.0, 0.0]),
+            Vector::new(vec![-y_radians.sin(), 0.0, y_radians.cos()])
+        ]).unwrap();
+        let z_rotation = Matrix::from_rows(vec![
+            Vector::new(vec![z_radians.cos(), -z_radians.sin(), 0.0]),
+            Vector::new(vec![z_radians.sin(), z_radians.cos(), 0.0]),
+            Vector::new(vec![0.0, 0.0, 1.0])
+        ]).unwrap();
+        ((x_rotation * y_rotation).unwrap() * z_rotation).unwrap()
     }
 
     /// Returns determinant of a square matrix. If matrix is non-square return `None`.
@@ -308,7 +378,7 @@ impl Matrix {
         Some(determinant)
     }
 
-    pub fn inverse(&self) -> Option<Matrix> {
+    pub fn inverse(&self) -> Option<Matrix<f32>> {
         let determinant = self.determinant()?;
         if determinant.abs() < f32::EPSILON {
             return None
@@ -319,12 +389,7 @@ impl Matrix {
         Some(1.0 / determinant * adjoint)
     }
 
-    
-    pub fn transposed(&self) -> Matrix {
-        Matrix::from_rule(self.cols_count, self.rows_count, |i, j| self[j][i])
-    }
-
-    pub fn approximately_equal(&self, other: &Matrix, epsilon: f32) -> bool {
+    pub fn approximately_equal(&self, other: &Matrix<f32>, epsilon: f32) -> bool {
         if self.cols_count != other.cols_count || self.rows_count != other.rows_count {
             return false
         }
@@ -338,72 +403,7 @@ impl Matrix {
         return true;
     }
 
-    pub fn set_row(&mut self, row_index: usize, new_row: Vector) -> Result<(), ()> {
-        if new_row.dim() != self.rows_count {
-            return Err(());
-        }
-
-        match self.rows.get_mut(row_index) {
-            Some(row) => *row = new_row,
-            None => return Err(()),
-        }
-
-        Ok(())
-    }
-
-    pub fn set_col(&mut self, col_index: usize, new_col: Vector) -> Result<(), ()> {
-        if col_index >= self.cols_count {
-            return Err(());
-        }
-
-        if new_col.dim() != self.cols_count {
-            return Err(());
-        }
-
-        for i in 0..self.cols_count {
-            self.rows[i].set(col_index, new_col[i])?;
-        }
-
-        Ok(())
-    }
-
-    pub fn set(&mut self, row_index: usize, col_index: usize, value: f32) -> Result<(), ()> {
-        let row = match self.rows.get_mut(row_index) {
-            None => return Err(()),
-            Some(row) => row,
-        };
-
-        let x = match row.coordinates.get_mut(col_index) {
-            None => return Err(()),
-            Some(x) => x,
-        };
-
-        *x = value;
-
-        Ok(())
-    }
-
-    pub fn swap_cols(&mut self, a_index: usize, b_index: usize) -> Result<(), ()> {
-        let a_col = self.get_col(a_index).ok_or(())?;
-        let b_col = self.get_col(b_index).ok_or(())?;
-
-        self.set_col(a_index, b_col)?;
-        self.set_col(b_index, a_col)?;
-
-        Ok(())
-    }
-
-    pub fn swap_rows(&mut self, a_index: usize, b_index: usize) -> Result<(), ()> {
-        let a_row = self.get_row(a_index).ok_or(())?;
-        let b_row = self.get_row(b_index).ok_or(())?;
-
-        self.set_row(a_index, b_row)?;
-        self.set_row(b_index, a_row)?;
-
-        Ok(())
-    }
-
-    pub fn multiply(&self, other: &Matrix) -> Option<Matrix> {
+    pub fn multiply(&self, other: &Matrix<f32>) -> Option<Matrix<f32>> {
         if self.cols_count != other.rows_count {
             return None;
         }
@@ -414,30 +414,30 @@ impl Matrix {
         }))
     }
 
-    pub fn multiply_by_vector(&self, other: &Vector) -> Option<Vector> {
+    pub fn multiply_by_vector(&self, other: &Vector<f32>) -> Option<Vector<f32>> {
         let vector_len = other.dim();
         let result: Matrix = (self * &Matrix::from_col(other))?;
         // assert that result matrix is a vector
         debug_assert!(result.cols_count == 1 && result.rows_count == vector_len);
-        let result: Vector = result.get_col(0).unwrap();
+        let result: Vector<f32> = result.get_col(0).unwrap();
         Some(result)
     }
 }
 
-impl Index<usize> for Matrix {
-    type Output = Vector;
+impl<T> Index<usize> for Matrix<T> {
+    type Output = Vector<T>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.rows[index]
     }
 }
 
-impl IndexMut<usize> for Matrix {
+impl<T> IndexMut<usize> for Matrix<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.rows[index]
     }
 }
 
-impl PartialEq for Matrix {
+impl<T> PartialEq for Matrix<T> {
     fn eq(&self, other: &Self) -> bool {
         if self.cols_count != other.cols_count || self.rows_count != other.rows_count {
             return false
@@ -451,10 +451,10 @@ impl PartialEq for Matrix {
     }
 }
 
-impl ops::Add<Matrix> for Matrix {
-    type Output = Option<Matrix>;
+impl<T> ops::Add<Matrix<T>> for Matrix<T> {
+    type Output = Option<Matrix<T>>;
 
-    fn add(self, rhs: Matrix) -> Self::Output {
+    fn add(self, rhs: Matrix<T>) -> Self::Output {
         if self.cols_count != rhs.cols_count || self.rows_count != rhs.rows_count {
             return None;
         }
@@ -467,8 +467,8 @@ impl ops::Add<Matrix> for Matrix {
     }
 }
 
-impl ops::Mul<f32> for Matrix {
-    type Output = Matrix;
+impl<T> ops::Mul<f32> for Matrix<T> {
+    type Output = Matrix<T>;
 
     fn mul(self, rhs: f32) -> Self::Output {
         let mut matrix = self.clone();
@@ -479,64 +479,64 @@ impl ops::Mul<f32> for Matrix {
     }
 }
 
-impl ops::Mul<Matrix> for f32 {
-    type Output = Matrix;
+impl ops::Mul<Matrix<f32>> for f32 {
+    type Output = Matrix<f32>;
 
-    fn mul(self, rhs: Matrix) -> Self::Output {
+    fn mul(self, rhs: Matrix<f32>) -> Self::Output {
         rhs * self
     }
 }
 
-impl ops::Div<f32> for Matrix {
-    type Output = Matrix;
+impl ops::Div<f32> for Matrix<f32> {
+    type Output = Matrix<f32>;
 
     fn div(self, rhs: f32) -> Self::Output {
         self * (1.0 / rhs)
     }
 }
 
-impl ops::Sub<Matrix> for Matrix {
-    type Output = Option<Matrix>;
+impl<T> ops::Sub<Matrix<T>> for Matrix<T> {
+    type Output = Option<Matrix<T>>;
 
-    fn sub(self, rhs: Matrix) -> Self::Output {
+    fn sub(self, rhs: Matrix<T>) -> Self::Output {
         self + -1.0 * rhs
     }
 }
 
-impl ops::Mul<Matrix> for Matrix {
-    type Output = Option<Matrix>;
+impl<T> ops::Mul<Matrix<T>> for Matrix<T> {
+    type Output = Option<Matrix<T>>;
 
-    fn mul(self, rhs: Matrix) -> Self::Output {
+    fn mul(self, rhs: Matrix<T>) -> Self::Output {
         self.multiply(&rhs)
     }
 }
 
-impl ops::Mul<&Matrix> for &Matrix {
-    type Output = Option<Matrix>;
+impl<T> ops::Mul<&Matrix<T>> for &Matrix<T> {
+    type Output = Option<Matrix<T>>;
 
-    fn mul(self, rhs: &Matrix) -> Self::Output {
+    fn mul(self, rhs: &Matrix<T>) -> Self::Output {
         self.multiply(rhs)
     }
 }
 
-impl ops::Mul<Vector> for Matrix {
-    type Output = Option<Vector>;
+impl<T> ops::Mul<Vector<T>> for Matrix<T> {
+    type Output = Option<Vector<T>>;
 
-    fn mul(self, rhs: Vector) -> Self::Output {
+    fn mul(self, rhs: Vector<T>) -> Self::Output {
         self.multiply_by_vector(&rhs)
     }
 }
 
-impl ops::Mul<&Vector> for &Matrix {
-    type Output = Option<Vector>;
+impl<T> ops::Mul<&Vector<T>> for &Matrix<T> {
+    type Output = Option<Vector<T>>;
 
-    fn mul(self, rhs: &Vector) -> Self::Output {
+    fn mul(self, rhs: &Vector<T>) -> Self::Output {
         self.multiply_by_vector(rhs)
     }
 }
 
 /// Generated by chat-gpt
-impl fmt::Debug for Matrix {
+impl<T> fmt::Debug for Matrix<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Find the maximum string length of any element in the matrix
         let mut max_len = 0;

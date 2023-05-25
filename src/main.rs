@@ -12,7 +12,6 @@ fn main() {
     
     game.systems.push(&spam);
     game.start_loop();
-
 }
 
 fn spam(game: &Game) {

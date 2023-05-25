@@ -3,8 +3,8 @@ use super::*;
 #[derive(Clone)]
 pub struct Ray {
     pub coordinate_system: CoordinateSystem,
-    pub point: Vector,
-    pub direction: Vector
+    pub point: Vector<f32>,
+    pub direction: Vector<f32>
 }
 
 impl Ray {
@@ -21,8 +21,8 @@ impl Ray {
 
 #[derive(PartialEq, Clone)]
 pub struct CoordinateSystem {
-    pub initial_point: Vector,
-    pub base: Vec<Vector>
+    pub initial_point: Vector<f32>,
+    pub base: Vec<Vector<f32>>
 }
 
 impl CoordinateSystem {

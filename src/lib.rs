@@ -3,7 +3,7 @@ pub mod engine;
 
 use math::*;
 
-fn print(matrix: &Matrix) {
+fn print<T>(matrix: &Matrix<T>) {
     println!("{:#?}", matrix);
 }
 
