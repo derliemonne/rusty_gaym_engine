@@ -630,6 +630,8 @@ where T: Clone + Display {
 
 #[cfg(test)]
 mod tests {
+    use std::f32::consts::PI;
+
     use super::*;
 
     #[test]
@@ -837,5 +839,51 @@ mod tests {
         let adjoint_actual = m.adjoint_matrix().expect("bad test");
         print!("{:?}", adjoint_actual);
         assert!(adjoint_actual.approximately_equal(&adjoint_expected, 1e-5))
+    }
+
+    #[test]
+    fn matrix_rotation_3d_halfpi_xyz() {
+        let actual = Matrix::rotation_matrix3d(PI / 2.0, PI / 2.0, PI / 2.0);
+        let rot_x = Matrix::new(3, 3, vec![
+            1.0, 0.0, 0.0,
+            0.0, 0.0, -1.0,
+            0.0, 1.0, 0.0,
+        ]).unwrap();
+        let rot_y = Matrix::new(3, 3, vec![
+            0.0, 0.0, 1.0,
+            0.0, 1.0, 0.0,
+            -1.0, 0.0, 0.0,
+        ]).unwrap();
+        let rot_z = Matrix::new(3, 3, vec![
+            0.0, -1.0, 0.0,
+            1.0, 0.0, 0.0, 
+            0.0, 0.0, 1.0,
+        ]).unwrap();
+        let expected = rot_x.multiply(&rot_y).unwrap().multiply(&rot_z).unwrap();
+        println!("expected: \n{:?}\nactual: \n{:?}", expected, actual);
+        assert!(actual.approximately_equal(&expected, 1e-5));
+    }
+
+    #[test]
+    fn matrix_rotation_3d_halfpi_x() {
+        let actual = Matrix::rotation_matrix3d(PI / 2.0, 0.0, 0.0);
+        let rot_x = Matrix::new(3, 3, vec![
+            1.0, 0.0, 0.0,
+            0.0, 0.0, -1.0,
+            0.0, 1.0, 0.0,
+        ]).unwrap();
+        let rot_y = Matrix::new(3, 3, vec![
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+        ]).unwrap();
+        let rot_z = Matrix::new(3, 3, vec![
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+        ]).unwrap();
+        let expected = rot_x.multiply(&rot_y).unwrap().multiply(&rot_z).unwrap();
+        println!("expected: \n{:?}\nactual: \n{:?}", expected, actual);
+        assert!(actual.approximately_equal(&expected, 1e-5));
     }
 }

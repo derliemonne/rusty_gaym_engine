@@ -351,6 +351,8 @@ impl<T: PartialEq> PartialEq for Vector<T> {
 
 #[cfg(test)]
 mod tests {
+    use std::f32::consts::PI;
+
     use super::*;
 
     fn compare_vectors(
@@ -434,6 +436,19 @@ mod tests {
         );
     }
 
+    fn vector_rotate3d(x: f32, y: f32, z: f32, 
+        x_radians: f32, y_radians: f32, z_radians: f32,
+        expected_x: f32, expected_y: f32, expected_z: f32) {
+        let v = Vector::new(vec![x, y, z]);
+        let expected = Vector::new(vec![expected_x, expected_y, expected_z]);
+        let actual = v.rotate3d(x_radians, y_radians, z_radians).unwrap();
+        
+        assert!(
+            actual.approximately_equal(&expected, 1e-5),
+            "expected: {:?}, actual: {:?}", expected, actual
+        );
+    }
+
     #[test]
     fn vector_rotate2d_1() {
         vector_rotate2d(1.0, 0.0, 90_f32.to_radians(), 0.0, 1.0);
@@ -453,4 +468,24 @@ mod tests {
     fn vector_rotate2d_4() {
         vector_rotate2d(1.0, 0.0, 360_f32.to_radians(), 1.0, 0.0);
     }
+
+    #[test]
+    fn vector_rotate_3d_0() {
+        vector_rotate3d(
+            1.0, 4.0, 6.0,
+            0.0, 0.0, 0.0,
+            1.0, 4.0, 6.0
+        )
+    }
+
+    #[test]
+    fn vector_rotate3d_x() {
+        vector_rotate3d(
+            1.0, 0.0, 0.0,
+            0.0, 0.0, PI / 2.0,
+            0.0, 1.0, 0.0
+        )
+    }
+
+
 }
