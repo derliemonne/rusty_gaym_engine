@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::iter::zip;
 use std::ops::{MulAssign, Mul, Div};
 use std::process::Output;
@@ -59,6 +60,10 @@ impl Vector<f32> {
 
     pub fn from_xyz(x: f32, y: f32, z: f32) -> Vector<f32> {
         Vector::new(vec![x, y, z])
+    }
+
+    pub fn from_xy(x: f32, y: f32) -> Vector<f32> {
+        Vector::new(vec![x, y])
     }
 
     /// Rotates 2d vector counterclockwise on angle expressed in radians.
@@ -157,6 +162,28 @@ impl Vector<f32> {
         zip(self.elements.iter(), other.elements.iter())
             .all(|(x1, x2)| (x1 - x2).abs() < epsilon)
     }
+
+    pub fn radians_to_rotate2d(&self, v: &Vector<f32>) -> Option<f32> {
+        if self.dim() != 2 || v.dim() != 2 {
+            return None;
+        }
+
+        let absolute_rotation_from_0_to_2pi = |x: f32, y: f32| (y.atan2(x) + 2.0 * PI) % (2.0 * PI);
+        let self_rotation = absolute_rotation_from_0_to_2pi(self[0], self[1]);
+        let v_rotation = absolute_rotation_from_0_to_2pi(v[0], v[1]);
+        let delta = self_rotation - v_rotation;
+        debug_assert!(0.0 <= delta && delta <= 2.0 * PI);
+        Some(delta)
+    }
+
+    pub fn rotate_to_matrix3d(&self, v: &Vector<f32>) -> Option<Matrix<f32>> {
+        if self.dim() != 3 || v.dim() != 3 {
+            return None;
+        }
+        panic!();
+        None
+    }
+
 }
 
 impl<T> ops::Index<usize> for Vector<T> {
