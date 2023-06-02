@@ -18,7 +18,7 @@ impl Camera {
         let alpha_i = |i| delta_alpha * i as f32 - 0.5 * delta_alpha;
         let beta_j = |j| delta_beta * j as f32 - 0.5 * delta_beta;
         // View direction vector.
-        let v: &Vector<f32> = &self.transform.rotation;
+        let v: &Vector<f32> = &self.transform.get_direction();
         let v_ij = |i, j| v.rotate3d(0.0, beta_j(j), alpha_i(i)).unwrap();
         // Fix "fish eye" effect.
         let v_fixed_ij = |i, j| {

@@ -31,7 +31,7 @@ impl GameObject for Hyperellipsoid {
                 1.0 / (self.semiaxes[i] * self.semiaxes[i])
             }
         ));
-        let r = Transform::default_rotation().rotate_to_matrix3d(&self.transform.rotation).unwrap();
+        let r = Transform::default_direction().rotate_to_matrix3d(&self.transform.get_direction()).unwrap();
         let q = r.transposed().multiply(&a).unwrap().multiply(&r).unwrap();
         let l = Matrix::from_col(ray.direction);
         let p = Matrix::from_col((ray.point - self.transform.position.clone()).unwrap());

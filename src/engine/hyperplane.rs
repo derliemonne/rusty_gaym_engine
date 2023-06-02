@@ -11,14 +11,14 @@ impl GameObject for Hyperplane {
     /// If ray is inside the hyperplane the distance is `0`.
     /// If ray is parallel to hyperplane returns `None`.
     fn intersection_distance(&self, ray: Ray) -> Option<f32> {
-        if ray.direction.dim() != self.transform.rotation.dim() ||
-            self.transform.rotation.dim() != self.transform.position.dim() {
+        if ray.direction.dim() != self.transform.get_direction().dim() ||
+            self.transform.get_direction().dim() != self.transform.position.dim() {
             return None;
         }
         
         // Let hyperplane alpha be a1 * x1 + a2 * x2 + ... + an * xn = b
         // Vector (a1, a2, ..., an) is normal to hyperplane and stored in the transform.rotation.
-        let normal = &self.transform.rotation;
+        let normal = &self.transform.get_direction();
         // A point on the hyperplane is stored in transform.position.
         let b = normal.dot_product(&self.transform.position);
 
