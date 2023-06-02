@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 use std::iter::zip;
-use std::ops::{MulAssign, Mul, Div};
+use std::ops::{MulAssign, Add, Mul, Div, Sub, Neg};
 use std::process::Output;
 use std::{ops, vec};
 use super::*;
@@ -180,8 +180,10 @@ impl Vector<f32> {
         if self.dim() != 3 || v.dim() != 3 {
             return None;
         }
-        panic!();
-        None
+        if self.square_magnitude() == 0.0 || v.square_magnitude() == 0.0 {
+            return None;
+        }
+        panic!()
     }
 
 }
@@ -227,7 +229,8 @@ impl<T> ops::IndexMut<usize> for Vector<T> {
 }
 
 
-impl<T: ops::Add<Output = T>> ops::Add<Vector<T>> for Vector<T> {
+impl<T> Add<Vector<T>> for Vector<T>
+where T: Add<Output = T> {
     type Output = Option<Vector<T>>;
 
     /// # Example
@@ -258,10 +261,9 @@ impl<T: ops::Add<Output = T>> ops::Add<Vector<T>> for Vector<T> {
     }
 }
 
-
-
-impl ops::Sub<Vector<f32>> for Vector<f32> {
-    type Output = Option<Vector<f32>>;
+impl<T> Sub<Vector<T>> for Vector<T>
+where T: Sub<Output = T> + Neg<Output = T> + Add<Output = T> {
+    type Output = Option<Vector<T>>;
 
     /// # Example
     /// ```
@@ -276,12 +278,14 @@ impl ops::Sub<Vector<f32>> for Vector<f32> {
     /// let v1 = Vector::new(vec![1.0, 2.0, 3.0]);
     /// let v2 = Vector::new(vec![4.0, -2.0, 10.0, 13.3]);
     /// assert_eq!(v1 - v2, None);
-    fn sub(self, rhs: Vector<f32>) -> Self::Output {
+    fn sub(self, rhs: Vector<T>) -> Self::Output {
         self + (-rhs)
     }
 }
 
-impl<T: ops::Neg<Output = T>> ops::Neg for Vector<T> {
+
+impl<T> Neg for Vector<T>
+where T: Neg<Output = T> {
     type Output = Vector<T>;
 
     /// # Example
