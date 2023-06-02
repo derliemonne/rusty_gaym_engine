@@ -16,7 +16,7 @@ impl Hyperellipsoid {
 
 impl GameObject for Hyperellipsoid {
     /// https://math.stackexchange.com/questions/3309397/line-ellipsoid-intersection
-    fn intersection_distance(&self, ray: Ray) -> Option<f32> {
+    fn intersection_distance(&self, ray: &Ray) -> Option<f32> {
         if ray.direction.dim() != ray.point.dim() || ray.direction.dim() != self.semiaxes.len() {
             return None
         }
@@ -33,8 +33,8 @@ impl GameObject for Hyperellipsoid {
         ));
         let r = Transform::default_direction().rotate_to_matrix3d(&self.transform.get_direction()).unwrap();
         let q = r.transposed().multiply(&a).unwrap().multiply(&r).unwrap();
-        let l = Matrix::from_col(ray.direction);
-        let p = Matrix::from_col((ray.point - self.transform.position.clone()).unwrap());
+        let l = Matrix::from_col(ray.direction.clone());
+        let p = Matrix::from_col((ray.point.clone() - self.transform.position.clone()).unwrap());
 
         let alpha = l.transposed().multiply(&q).unwrap().multiply(&l).unwrap()[0][0];
         let beta = l.transposed().multiply(&q).unwrap().multiply(&p).unwrap()[0][0];
