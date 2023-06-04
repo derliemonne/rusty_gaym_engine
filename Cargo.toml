@@ -3,6 +3,9 @@ name = "rusty_gaym_engine"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+rust-ini = "0.19.0"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies.uuid]
@@ -12,3 +15,5 @@ features = [
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ]
+
+rust-ini = "0.19.0"
