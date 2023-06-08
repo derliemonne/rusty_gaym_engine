@@ -1,5 +1,6 @@
 pub mod math;
 pub mod engine;
+pub mod fov_utils;
 
 use std::fmt::Display;
 

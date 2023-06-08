@@ -2,12 +2,23 @@ use super::*;
 use crate::math::*;
 
 
-struct Canvas {
-    resolution: (usize, usize),
-    distances: Matrix<Option<f32>>
+pub struct Canvas {
+    pub resolution: (usize, usize),
+    pub distances: Matrix<Option<f32>>
 }
 
 impl Canvas {
+    pub fn new(width: usize, height: usize) -> Canvas {
+        Canvas { 
+            resolution: (width, height),
+            distances: Matrix::from_rule(width, height, |_, _| None) 
+        }
+    }
+
+    pub fn new_from_game_config(config: &GameConfig) -> Canvas {
+        Canvas::new(config.screen_width, config.screen_height)
+    }
+
     pub fn draw(&self) {
         println!("canvas.draw")
     }

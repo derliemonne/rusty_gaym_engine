@@ -2,10 +2,11 @@ use ini::Ini;
 
 #[derive(PartialEq, Debug)]
 pub struct GameConfig {
-    screen_width: usize,
-    screen_height: usize,
-    camera_fov: f32,
-    camera_draw_distance: f32,
+    pub screen_width: usize,
+    pub screen_height: usize,
+    pub target_fps: usize,
+    pub camera_fov: f32,
+    pub camera_draw_distance: f32,
 }
 
 impl GameConfig {
@@ -13,6 +14,7 @@ impl GameConfig {
         GameConfig { 
             screen_width: 300,
             screen_height: 200,
+            target_fps: 30,
             camera_fov: 75.0,
             camera_draw_distance: 100.0,
         }
@@ -24,12 +26,14 @@ impl GameConfig {
         let section = ini.general_section();
         let screen_width = section.get("screen_width").ok_or("Missing screen_width")?.parse()?;
         let screen_height = section.get("screen_height").ok_or("Missing screen_height")?.parse()?;
+        let target_fps = section.get("target_fps").ok_or("Missing target_fps")?.parse()?;
         let camera_fov = section.get("camera_fov").ok_or("Missing camera_fov")?.parse()?;
         let camera_draw_distance = section.get("camera_draw_distance").ok_or("Missing camera_draw_distance")?.parse()?;
 
         Ok(GameConfig {
             screen_width,
             screen_height,
+            target_fps,
             camera_fov,
             camera_draw_distance,
         })
@@ -41,6 +45,7 @@ impl GameConfig {
         ini.with_general_section()
             .set("screen_width", &self.screen_width.to_string())
             .set("screen_height", &self.screen_height.to_string())
+            .set("target_fps", &self.target_fps.to_string())
             .set("camera_fov", &self.camera_fov.to_string())
             .set("camera_draw_distance", &self.camera_draw_distance.to_string());
         ini.write_to_file(filepath).unwrap();

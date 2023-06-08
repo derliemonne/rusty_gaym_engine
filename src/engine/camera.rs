@@ -1,5 +1,6 @@
 use super::*;
 use crate::math::*;
+use crate::fov_utils::vertical_fov_from_horizontal;
 
 
 pub struct Camera {
@@ -10,6 +11,17 @@ pub struct Camera {
 }
 
 impl Camera {
+    pub fn new_from_config(config: &GameConfig) -> Camera {
+        Camera { 
+            transform: Transform::default(),
+            horizontal_fov: config.camera_fov,
+            vertical_fov: vertical_fov_from_horizontal(
+                config.camera_fov,
+                config.screen_width as f32 / config.screen_height as f32),
+            draw_distance: config.camera_draw_distance,
+        }
+    }
+
     pub fn get_rays_matrix(&self, n: usize, m: usize) -> Matrix<Ray> {
         // TODO: if fov >= pi than log warning message.
 
