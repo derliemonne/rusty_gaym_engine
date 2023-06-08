@@ -8,19 +8,20 @@ use console_engine::pixel::Pixel;
 
 
 
-pub struct Game<'a> {
+pub struct Game<'a, E: EventT, Es: EventSystemT<E>> {
     pub coordinate_system: CoordinateSystem,
     pub entities: Vec<Entity>,
-    pub systems: Vec<&'a dyn Fn(&Game) -> bool>,
+    pub systems: Vec<&'a dyn Fn(&Game<E, Es>) -> bool>,
     pub game_objects: Vec<Box<dyn GameObject>>,
     pub config: GameConfig,
     pub console_engine: ConsoleEngine,
     pub camera: Camera,
     pub canvas: Canvas,
+    pub event_system: Es,
 }
 
-impl<'a> Game<'a> {
-    pub fn new(coordinate_system: CoordinateSystem, config: GameConfig) -> Game<'a> {
+impl<'a, E: EventT, Es: EventSystemT<E>> Game<'a, E, Es> {
+    pub fn new(coordinate_system: CoordinateSystem, config: GameConfig) -> Game<'a, E, Es> {
         Game { 
             coordinate_system, 
             entities: vec![],
@@ -34,6 +35,7 @@ impl<'a> Game<'a> {
             camera: Camera::new_from_config(&config),
             canvas: Canvas::new_from_game_config(&config),
             config,
+            event_system: Es::default(),
         }
     }
 
