@@ -6,6 +6,11 @@ use std::{ops, vec};
 use super::*;
 
 
+pub enum NormalizedVectorResult<'a> {
+    UnableToNormalize(&'a Vector<f32>),
+    Normalized(Vector<f32>),
+}
+
 #[derive(Debug, Clone)]
 pub struct Vector<T> {
     pub elements: Vec<T>,
@@ -90,12 +95,23 @@ impl Vector<f32> {
             .unwrap())
     }
 
-    pub fn normalized(&self) -> Vector<f32> {
-        self / self.magnitude()
+    pub fn normalized(&self) -> NormalizedVectorResult {
+        let magnitude = self.magnitude();
+        if magnitude == 0.0 {
+            return NormalizedVectorResult::UnableToNormalize(self);
+        }
+        NormalizedVectorResult::Normalized(self / self.magnitude())
     }
 
-    pub fn normalize(&mut self) {
+    /// Tries to normalize vector.
+    /// If vector's magnitude is zero, than vector stays the same.
+    /// Returns true if vector has been normalized and false otherwise.
+    pub fn normalize(&mut self) -> bool {
+        if self.magnitude() == 0.0 {
+            return false;
+        }
         *self /= self.magnitude();
+        return true;
     }
 
     /// Returns the square of Eucledean distance between two vectors.
@@ -258,6 +274,15 @@ where T: Add<Output = T> {
                 .map(|(self_x, rhs_x)| self_x + rhs_x)
                 .collect()
         ))
+    }
+}
+
+impl<T> Add<&Vector<T>> for &Vector<T> where 
+T: Add<Output = T> + Clone {
+    type Output = Option<Vector<T>>;
+
+    fn add(self, rhs: &Vector<T>) -> Self::Output {
+        self.clone() + rhs.clone()
     }
 }
 

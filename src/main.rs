@@ -34,15 +34,17 @@ impl EventSystemT<Event> for EventSystem {
 
 fn main() {
     let config = GameConfig {
-        screen_width: 20,
+        screen_width: 60,
         screen_height: 20,
         target_fps: 30,
         camera_fov: PI / 3.0,
-        camera_draw_distance: 20.0,
+        camera_draw_distance: 0.0,
     };
     let mut game = Game::<Event, EventSystem>::new(
         CoordinateSystem::default3(),
         config
-    );
+    );    
+
+    game.init();
     game.start_loop();
 }

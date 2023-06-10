@@ -2,7 +2,8 @@ use super::*;
 use crate::math::*;
 
 
-struct Hyperplane {
+#[derive(Default)]
+pub struct Hyperplane {
     pub transform: Transform,
 }
 
@@ -44,5 +45,64 @@ impl GameObject for Hyperplane {
         // Thats how we find t.
         let t = (b - normal_dot_ray_point) / normal_dot_ray_direction;
         Some(t)
+    }
+}
+
+
+#[cfg(test)]
+mod hyperplane_tests {
+    use crate::engine::*;
+    use crate::math::*;
+
+    use super::Hyperplane;
+
+    fn assert_eq_f32(lhs: f32, rhs: f32) {
+        if (lhs - rhs).abs() > 1e-5 {
+            panic!("{} != {}", lhs, rhs);
+        } 
+    }
+
+    #[test]
+    fn intersection3d_ray_inside() {
+        let p = Hyperplane::default();
+        let ray = Ray::new(
+            Vector::from_xyz(0.0, 0.0, 0.0),
+            Vector::from_xyz(1.0, 0.0, 0.0),
+        );
+        let expected = 0.0;
+
+        let actual = p.intersection_distance(&ray)
+            .expect("Intersection must be, but it's not.");
+        
+        assert_eq_f32(actual, expected);
+    }
+
+    #[test]
+    fn intersection3d_1() {
+        let p = Hyperplane::default();
+        let ray = Ray::new(
+            Vector::from_xyz(-1.0, 0.0, 0.0),
+            Vector::from_xyz(1.0, 0.0, 0.0),
+        );
+        let expected = 1.0;
+
+        let actual = p.intersection_distance(&ray)
+            .expect("Intersection must be, but it's not.");
+        
+        assert_eq_f32(actual, expected);
+    }
+
+    #[test]
+    fn intersection3d_neg2() {
+        let p = Hyperplane::default();
+        let ray = Ray::new(
+            Vector::from_xyz(2.0, 0.0, 0.0),
+            Vector::from_xyz(1.0, 0.0, 0.0),
+        );
+        let expected = -2.0;
+
+        let actual = p.intersection_distance(&ray)
+            .expect("Intersection must be, but it's not.");
+        assert_eq_f32(actual, expected);
     }
 }

@@ -3,7 +3,7 @@ use std::{ops::Mul, cmp::min};
 use crate::math::*;
 use super::*;
 
-struct Hyperellipsoid {
+pub struct Hyperellipsoid {
     pub transform: Transform,
     pub semiaxes: Vec<f32>
 }

@@ -2,12 +2,12 @@ pub mod math;
 pub mod engine;
 pub mod fov_utils;
 
-use std::fmt::Display;
+use std::fmt::Debug;
 
 use math::*;
 
-fn print<T: Clone + Display>(matrix: &Matrix<T>) {
-    println!("{:#?}", matrix);
+fn print<T: Clone + Debug>(matrix: &Matrix<T>) {
+    println!("{:?}", matrix);
 }
 
 fn main() {

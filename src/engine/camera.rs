@@ -11,7 +11,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new_from_config(config: &GameConfig) -> Camera {
+    pub fn new(transform: Transform, config: &GameConfig) -> Camera {
         Camera { 
             transform: Transform::default(),
             horizontal_fov: config.camera_fov,
