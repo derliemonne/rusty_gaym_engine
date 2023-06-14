@@ -1,5 +1,6 @@
 use super::*;
 use crate::math::*;
+use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::default;
 use std::rc::Rc;
@@ -12,25 +13,10 @@ use console_engine::KeyCode;
 use console_engine::pixel::Pixel;
 
 
-pub type GameObjects = Vec<Rc<RefCell<dyn GameObject>>>;
+pub type GameObjects = Vec<Rc<RefCell<Box<dyn GameObject>>>>;
 
 
 
-#[derive(Default)]
-pub struct MovingPlane(Hyperplane);
-
-impl MovingPlane  {
-    pub fn update<E, Es>(&mut self, game: &Game<E, Es>) where
-    E: EventT + 'static,
-    Es: EventSystemT<E> + 'static, {
-        let t: f32 = match &game.clock {
-            Clock::Inactive => panic!("clock is not working"),
-            Clock::Active(active_clock) => active_clock.elapsed_from_start(),
-        }.as_secs_f32();
-        // self.0.transform.position[0] = t.sin() * 5.0;
-        // self.0.transform.set_direction(&Vector::from_xyz(t, 0.0, 0.0)).unwrap();
-    }
-}
 
 pub struct ActiveClock {
     started: time::Instant,
@@ -66,7 +52,6 @@ Es: EventSystemT<E> + 'static, {
     pub canvas: Canvas,
     pub event_system: Es,
     pub clock: Clock,
-    pub moving_plane: RefCell<MovingPlane>,
     pub game_objects: GameObjects,
     _phantom_data: Option<&'a E>,
 }
@@ -88,7 +73,6 @@ Es: EventSystemT<E> + 'static {
             config,
             event_system: Es::default(),
             clock: Clock::default(),
-            moving_plane: RefCell::new(MovingPlane::default()),
             game_objects: vec![],
             _phantom_data: None,
         }
@@ -96,10 +80,7 @@ Es: EventSystemT<E> + 'static {
 
     // Call before start_loop
     pub fn init(&mut self) {
-        self.moving_plane = RefCell::new(MovingPlane(Hyperplane { transform: Transform::new_from_coords(
-            0.0, 0.0, 0.0,
-            1.0, 0.0, 0.0,
-        ).unwrap()}));
+
     }
 
     // Call after init
@@ -126,12 +107,6 @@ Es: EventSystemT<E> + 'static {
     }
 
     fn update(&mut self) -> bool {
-        // update of game objects state
-        self.moving_plane.borrow_mut().update(self);
-        // ----------------------------
-
-        self.canvas.update(&self.camera, &self.game_objects);
-
         self.console_engine.wait_frame(); // wait for next frame + capture inputs
         if let Clock::Active(active_clock) = &mut self.clock {
             active_clock.prev_frame = active_clock.current_frame;
@@ -179,7 +154,16 @@ Es: EventSystemT<E> + 'static {
                 ),
             
         };
-        let debug_plane_text = format!("Plane: {:?}", self.moving_plane.borrow().0.transform.position);
+
+        // let debug_plane_text = match &self.moving_plane {
+        //     None => String::from(""),
+        //     Some(moving_plane) =>
+        //         format!(
+        //             "Plane: {:?}",
+        //             moving_plane.borrow().0.transform.position),
+        // };
+        let debug_plane_text = "commented";
+
         let debug_text = debug_clock_text.clone() + " " + &debug_plane_text;
         // Debug draw:
         self.console_engine.print_fbg(

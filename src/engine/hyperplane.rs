@@ -2,26 +2,24 @@ use super::*;
 use crate::math::*;
 
 
-#[derive(Default)]
-pub struct Hyperplane {
-    pub transform: Transform,
-}
+#[derive(Default, Debug, Clone)]
+pub struct Hyperplane;
 
 impl GameObject for Hyperplane {
     /// If dimensions of `ray` and `self.transform` are not the same returns `None`.
     /// If ray is inside the hyperplane the distance is `0`.
     /// If ray is parallel to hyperplane returns `None`.
-    fn intersection_distance(&self, ray: &Ray) -> Option<f32> {
-        if ray.direction.dim() != self.transform.get_direction().dim() ||
-            self.transform.get_direction().dim() != self.transform.position.dim() {
+    fn intersection_distance(&self, transform: &Transform, ray: &Ray) -> Option<f32> {
+        if ray.direction.dim() != transform.get_direction().dim() ||
+            transform.get_direction().dim() != transform.position.dim() {
             return None;
         }
         
         // Let hyperplane alpha be a1 * x1 + a2 * x2 + ... + an * xn = b
         // Vector (a1, a2, ..., an) is normal to hyperplane and stored in the transform.rotation.
-        let normal = &self.transform.get_direction();
+        let normal = transform.get_direction();
         // A point on the hyperplane is stored in transform.position.
-        let b = normal.dot_product(&self.transform.position);
+        let b = normal.dot_product(&transform.position);
 
 
         let normal_dot_ray_direction = normal.dot_product(&ray.direction);
@@ -71,7 +69,7 @@ mod hyperplane_tests {
         );
         let expected = 0.0;
 
-        let actual = p.intersection_distance(&ray)
+        let actual = p.intersection_distance(&Transform::default(), &ray)
             .expect("Intersection must be, but it's not.");
         
         assert_eq_f32(actual, expected);
@@ -86,7 +84,7 @@ mod hyperplane_tests {
         );
         let expected = 1.0;
 
-        let actual = p.intersection_distance(&ray)
+        let actual = p.intersection_distance(&Transform::default(), &ray)
             .expect("Intersection must be, but it's not.");
         
         assert_eq_f32(actual, expected);
@@ -101,7 +99,7 @@ mod hyperplane_tests {
         );
         let expected = -2.0;
 
-        let actual = p.intersection_distance(&ray)
+        let actual = p.intersection_distance(&Transform::default(), &ray)
             .expect("Intersection must be, but it's not.");
         assert_eq_f32(actual, expected);
     }

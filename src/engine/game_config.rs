@@ -1,6 +1,6 @@
 use ini::Ini;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct GameConfig {
     pub screen_width: usize,
     pub screen_height: usize,
@@ -10,16 +10,6 @@ pub struct GameConfig {
 }
 
 impl GameConfig {
-    pub fn default() -> GameConfig {
-        GameConfig { 
-            screen_width: 300,
-            screen_height: 200,
-            target_fps: 30,
-            camera_fov: 75.0,
-            camera_draw_distance: 100.0,
-        }
-    }
-
     /// Loads configs from file.
     pub fn load_from_file(filepath: &str) -> Result<GameConfig, Box<dyn std::error::Error>> {
         let ini = Ini::load_from_file(filepath)?;
@@ -50,6 +40,18 @@ impl GameConfig {
             .set("camera_draw_distance", &self.camera_draw_distance.to_string());
         ini.write_to_file(filepath).unwrap();
         Ok(())
+    }
+}
+
+impl Default for GameConfig {
+    fn default() -> GameConfig {
+        GameConfig { 
+            screen_width: 300,
+            screen_height: 200,
+            target_fps: 30,
+            camera_fov: 75.0,
+            camera_draw_distance: 100.0,
+        }
     }
 }
 

@@ -3,5 +3,5 @@ use super::*;
 
 
 pub trait GameObject {
-    fn intersection_distance(&self, ray: &Ray) -> Option<f32>;
+    fn intersection_distance(&self, transform: &Transform, ray: &Ray) -> Option<f32>;
 }

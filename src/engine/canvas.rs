@@ -24,20 +24,21 @@ impl Canvas {
     }
 
     pub fn update<'a>(
-    &mut self,
-    camera: &Camera,
-    game_objects: &GameObjects) {
-
-        let rays = camera.get_rays_matrix(self.height, self.width);
+        &mut self,
+        camera: &Camera,
+        camera_transform: &Transform,
+        objects: Vec<(&Transform, &dyn GameObject)>
+    ) {
+        let rays = camera.get_rays_matrix(camera_transform, self.height, self.width);
 
         debug_assert_eq!(rays.cols_count(), self.width);
         debug_assert_eq!(rays.rows_count(), self.height);
 
         let min_distance = 
-        |game_objects: &GameObjects, ray: &Ray| {
+        |objects: &Vec<(&Transform, &dyn GameObject)>, ray: &Ray| {
             let mut min_distance: Option<f32> = None;
-            for game_object in game_objects {
-                let distance = match game_object.borrow().intersection_distance(ray) {
+            for (transform, game_object) in objects {
+                let distance = match game_object.intersection_distance(&transform, ray) {
                     None => continue,
                     Some(distance) => distance,
                 };
@@ -50,7 +51,7 @@ impl Canvas {
 
         self.distances = Matrix::from_rule(
             self.height, self.width,
-            |i, j| min_distance(game_objects, &rays[i][j])
+            |i, j| min_distance(&objects, &rays[i][j])
         )
     }
 }
@@ -68,11 +69,12 @@ mod canvas_tests {
         //     1.0, 0.0, 0.0,
         //     1.0, 1.0, 0.0,
         // ).unwrap()};
-        // let mut game_objects = vec![];
-        // game_objects.push(&mut plane as &mut dyn GameObject);
+        // let mut game_objects: GameObjects = vec![];
+        // game_objects.push(Rc::new(RefCell::new(Box::new(plane))));
 
         // canvas.update(&camera, &game_objects);
 
         // println!("{:?}", canvas.distances);
     }
 }
+

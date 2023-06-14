@@ -1,8 +1,9 @@
 use super::*;
 use crate::math::*;
-use crate::fov_utils::vertical_fov_from_horizontal;
+use crate::utils::vertical_fov_from_horizontal;
 
 
+#[derive(Clone, Debug)]
 pub struct Camera {
     pub transform: Transform,
     pub horizontal_fov: f32,
@@ -13,7 +14,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(transform: Transform, config: &GameConfig) -> Camera {
         Camera { 
-            transform: Transform::default(),
+            transform,
             horizontal_fov: config.camera_fov,
             vertical_fov: vertical_fov_from_horizontal(
                 config.camera_fov,
@@ -22,7 +23,7 @@ impl Camera {
         }
     }
 
-    pub fn get_rays_matrix(&self, n: usize, m: usize) -> Matrix<Ray> {
+    pub fn get_rays_matrix(&self, transform: &Transform, n: usize, m: usize) -> Matrix<Ray> {
         // TODO: if fov >= pi than log warning message.
 
         let delta_alpha: f32 = self.horizontal_fov / n as f32;
@@ -30,7 +31,7 @@ impl Camera {
         let alpha_i = |i| delta_alpha * i as f32 - 0.5 * delta_alpha;
         let beta_j = |j| delta_beta * j as f32 - 0.5 * delta_beta;
         // View direction vector.
-        let v: &Vector<f32> = &self.transform.get_direction();
+        let v: &Vector<f32> = &transform.get_direction();
         let v_ij = |i, j| v.rotate3d(0.0, beta_j(j), alpha_i(i)).unwrap();
         // Fix "fish eye" effect.
         let v_fixed_ij = |i, j| {
@@ -40,7 +41,7 @@ impl Camera {
 
         Matrix::<Ray>::from_rule(
             n, m,
-            |i, j| Ray::new(self.transform.position.clone(), v_fixed_ij(i, j))
+            |i, j| Ray::new(transform.position.clone(), v_fixed_ij(i, j))
         )
     }
 }

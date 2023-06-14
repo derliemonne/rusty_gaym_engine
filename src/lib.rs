@@ -1,6 +1,6 @@
 pub mod math;
 pub mod engine;
-pub mod fov_utils;
+pub mod utils;
 
 use std::fmt::Debug;
 
